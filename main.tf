@@ -16,7 +16,7 @@ module "label" {
 }
 
 resource "aws_s3_bucket" "cache_bucket" {
-  count         = var.enabled == "true" && var.cache_enabled == "true" ? 1 : 0
+  count         = var.enabled == "true" && var.cache_enabled == "true" ? "1" : "0"
   bucket        = local.cache_bucket_name_normalised
   acl           = "private"
   force_destroy = true
@@ -44,7 +44,7 @@ resource "random_string" "bucket_prefix" {
 }
 
 locals {
-  cache_bucket_name = "${module.label.id}${var.cache_bucket_suffix_enabled == "true" ? "-${random_string.bucket_prefix.result}" : ""}"
+  cache_bucket_name = join("", [module.label.id, var.cache_bucket_suffix_enabled == "true" ? join("-", [random_string.bucket_prefix.result,]): "" ])
 
   ## Clean up the bucket name to use only hyphens, and trim its length to 63 characters.
   ## As per https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
@@ -72,7 +72,7 @@ locals {
 }
 
 resource "aws_iam_role" "default" {
-  count              = var.enabled == "true" ? 1 : 0
+  count              = var.enabled == "true" ? "1" : "0"
   name               = module.label.id
   assume_role_policy = data.aws_iam_policy_document.role.json
 }
@@ -95,15 +95,15 @@ data "aws_iam_policy_document" "role" {
 }
 
 resource "aws_iam_policy" "default" {
-  count  = var.enabled == "true" ? 1 : 0
+  count  = var.enabled == "true" ? "1" : "0"
   name   = module.label.id
   path   = "/service-role/"
   policy = data.aws_iam_policy_document.permissions.json
 }
 
 resource "aws_iam_policy" "default_cache_bucket" {
-  count  = var.enabled == "true" && var.cache_enabled == "true" ? 1 : 0
-  name   = "${module.label.id}-cache-bucket"
+  count  = var.enabled == "true" && var.cache_enabled == "true" ? "1" : "0"
+  name   = join("-", [module.label.id, "cache-bucket"])
   path   = "/service-role/"
   policy = data.aws_iam_policy_document.permissions_cache_bucket[0].json
 }
@@ -136,7 +136,7 @@ data "aws_iam_policy_document" "permissions" {
 }
 
 data "aws_iam_policy_document" "permissions_cache_bucket" {
-  count = var.enabled == "true" && var.cache_enabled == "true" ? 1 : 0
+  count = var.enabled == "true" && var.cache_enabled == "true" ? "1" : "0"
 
   statement {
     sid = ""
@@ -149,25 +149,25 @@ data "aws_iam_policy_document" "permissions_cache_bucket" {
 
     resources = [
       aws_s3_bucket.cache_bucket[0].arn,
-      "${aws_s3_bucket.cache_bucket[0].arn}/*",
+      join("/",[aws_s3_bucket.cache_bucket[0].arn, "*"]),
     ]
   }
 }
 
 resource "aws_iam_role_policy_attachment" "default" {
-  count      = var.enabled == "true" ? 1 : 0
+  count      = var.enabled == "true" ? "1" : "0"
   policy_arn = aws_iam_policy.default[0].arn
   role       = aws_iam_role.default[0].id
 }
 
 resource "aws_iam_role_policy_attachment" "default_cache_bucket" {
-  count      = var.enabled == "true" && var.cache_enabled == "true" ? 1 : 0
+  count      = var.enabled == "true" && var.cache_enabled == "true" ? "1" : "0"
   policy_arn = element(aws_iam_policy.default_cache_bucket.*.arn, count.index)
   role       = aws_iam_role.default[0].id
 }
 
 resource "aws_codebuild_project" "default" {
-  count         = var.enabled == "true" ? 1 : 0
+  count         = var.enabled == "true" ? "1" : "0"
   name          = module.label.id
   service_role  = aws_iam_role.default[0].arn
   badge_enabled = var.badge_enabled
