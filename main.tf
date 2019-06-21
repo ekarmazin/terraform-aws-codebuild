@@ -186,9 +186,8 @@ resource "aws_codebuild_project" "default" {
       # produced a comprehensive set here. Consider simplifying
       # this after confirming which keys can be set in practice.
 
-      location = lookup(cache.value, "location", null)
-      modes    = lookup(cache.value, "modes", null)
-      type     = lookup(cache.value, "type", null)
+      location = lookup(cache, "location", "")
+      type     = lookup(cache, "type", "")
     }
   }
 
