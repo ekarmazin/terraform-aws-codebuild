@@ -44,7 +44,7 @@ resource "random_string" "bucket_prefix" {
 }
 
 locals {
-  cache_bucket_name = join("", [module.label.id, var.cache_bucket_suffix_enabled == "true" ? join("-", [random_string.bucket_prefix.result,]): "" ])
+  cache_bucket_name = join("-", [module.label.id, var.cache_bucket_suffix_enabled == "true" ? random_string.bucket_prefix.result : "" ])
 
   ## Clean up the bucket name to use only hyphens, and trim its length to 63 characters.
   ## As per https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
